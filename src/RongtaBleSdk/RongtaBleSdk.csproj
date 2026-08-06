@@ -1,7 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst;net10.0-windows10.0.17763.0</TargetFrameworks>
+    <!-- Windows target is only buildable on a Windows machine/runner (it's here so CELMI's local
+         ProjectReference on Windows resolves it too); CI packs on macOS, which can't build it. -->
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net10.0-android;net10.0-ios;net10.0-maccatalyst;net10.0-windows10.0.17763.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
     <UseMaui>true</UseMaui>
     <SingleProject>false</SingleProject>
     <ImplicitUsings>enable</ImplicitUsings>
