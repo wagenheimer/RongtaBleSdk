@@ -8,7 +8,7 @@
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/)
 [![MAUI](https://img.shields.io/badge/MAUI-Android%20%7C%20iOS%20%7C%20MacCatalyst-blue)](https://learn.microsoft.com/dotnet/maui/)
 [![Status](https://img.shields.io/badge/status-confirmed%20on%20real%20hardware-brightgreen)](#-confirmed-for-real-not-a-guess)
-[![Version](https://img.shields.io/badge/version-0.2.0-orange)](#-whats-new-in-020)
+[![NuGet](https://img.shields.io/nuget/v/RongtaBleSdk.svg)](https://www.nuget.org/packages/RongtaBleSdk)
 
 There is no official BLE UUID documentation for Rongta printers anywhere.
 This repo exists because someone needed to print a label on an RPP30 over BLE — and had to reverse-engineer it the hard way.
@@ -95,11 +95,19 @@ The RPP30 accepts both **CPCL** and **ESC/POS** (switchable from the physical me
 
 ## 📦 Installation
 
+```powershell
+dotnet add package RongtaBleSdk
+```
+
+or in your `.csproj`:
+
 ```xml
-<PackageReference Include="RongtaBleSdk" Version="0.2.0" />
+<PackageReference Include="RongtaBleSdk" Version="0.2.1" />
 <PackageReference Include="Shiny.BluetoothLE" Version="4.0.1" />
 <PackageReference Include="SkiaSharp" Version="3.119.4" />
 ```
+
+`Shiny.BluetoothLE` and `SkiaSharp` come in transitively, but pinning your own versions avoids surprises across MAUI upgrades.
 
 Register in `MauiProgram.cs`:
 
@@ -152,13 +160,19 @@ await printer.SendAsync(rawCommand);
 
 | Method | Description |
 |---|---|
-| `CreateMm(width, height, qty)` | Creates the label from a size in millimeters (203dpi → 8 dots/mm) |
-| `CreateDots(width, height, qty)` | Creates the label already in dots, for fine-grained control |
+| `CreateMm(width, height, qty, gapMm)` | Creates a fixed-height label from a size in millimeters (203dpi → 8 dots/mm) |
+| `CreateDots(width, height, qty, gapDots)` | Same as above, but the size is already in dots |
+| `CreateAutoHeightMm(width, qty, gapMm)` | Creates a label whose **height is calculated automatically** from whatever content you add (text/barcode/QR/image Y positions) — no need to know it up front |
+| `CreateAutoHeightDots(width, qty, gapDots)` | Same as above, width already in dots |
 | `AddText(x, y, text, font, size)` | Adds a line of text |
 | `AddBarcode(x, y, data, type, height, ...)` | Adds a 1D barcode (CODE128, EAN13, etc.) |
 | `AddQrCode(x, y, data, cellSize)` | Adds a QR code |
 | `AddLine(x, y, length, thickness)` | Line/separator |
-| `Build()` | Generates the CPCL bytes ready for `SendAsync` |
+| `AddImage(x, y, imageBytes, maxWidthDots, maxHeightDots)` | Converts a PNG/JPG (via SkiaSharp) to the CPCL `EG` command — logos, graphics, anything bitmap |
+| `AddRawCommand(cpclBlock)` | Appends one or more raw CPCL command lines for anything not covered by the fluent API; still parsed for automatic height tracking |
+| `Build()` | Generates the final CPCL bytes (header, `TONE`/`SETMAG`, diacritics stripped, `FORM`/`PRINT`) ready for `SendAsync` |
+
+`RongtaBlePrinter` also exposes `DetectedWriteEndpoint` after connecting, so you can log/inspect which service/characteristic pair actually worked on your unit.
 
 ## 🔍 Discovery tool
 
@@ -211,6 +225,10 @@ It scans for 15s, connects to the first device whose name contains `RPP`/`RONGTA
 - Tested on **a single physical unit** only ("BLE-TX" firmware, name `RPP30-C860`). Contributions confirming/correcting UUIDs on other batches are welcome.
 - **iOS**: the API is abstracted by Shiny.BluetoothLE and should work in theory, but hasn't been validated on a real iPhone yet.
 - Encoding is fixed at ISO-8859-1 — accented characters may vary depending on the printer's configured codepage (`CP850`/`CP1252`/etc, see physical menu).
+
+## 📦 Releasing
+
+Publishing to NuGet.org uses [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) — no API key is stored anywhere. `.github/workflows/publish.yml` requests a short-lived OIDC token from GitHub Actions, exchanges it for a temporary NuGet API key, and pushes the package. It runs on `workflow_dispatch` or on pushing a `v*` tag.
 
 ## 🤝 Contributing
 

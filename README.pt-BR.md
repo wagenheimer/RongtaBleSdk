@@ -8,7 +8,7 @@
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/)
 [![MAUI](https://img.shields.io/badge/MAUI-Android%20%7C%20iOS%20%7C%20MacCatalyst-blue)](https://learn.microsoft.com/dotnet/maui/)
 [![Status](https://img.shields.io/badge/status-confirmado%20em%20dispositivo%20real-brightgreen)](#-confirmado-de-verdade-não-é-palpite)
-[![Version](https://img.shields.io/badge/version-0.2.0-orange)](#-novidades-da-020)
+[![NuGet](https://img.shields.io/nuget/v/RongtaBleSdk.svg)](https://www.nuget.org/packages/RongtaBleSdk)
 
 🇺🇸 [Read in English](README.md) · 🇧🇷 Português (você está aqui)
 
@@ -95,11 +95,19 @@ A RPP30 aceita **CPCL** e **ESC/POS** (alternável no menu físico: segure `Powe
 
 ## 📦 Instalação
 
+```powershell
+dotnet add package RongtaBleSdk
+```
+
+ou no `.csproj`:
+
 ```xml
-<PackageReference Include="RongtaBleSdk" Version="0.2.0" />
+<PackageReference Include="RongtaBleSdk" Version="0.2.1" />
 <PackageReference Include="Shiny.BluetoothLE" Version="4.0.1" />
 <PackageReference Include="SkiaSharp" Version="3.119.4" />
 ```
+
+`Shiny.BluetoothLE` e `SkiaSharp` vêm transitivamente, mas fixar sua própria versão evita surpresas em upgrades do MAUI.
 
 Registre no `MauiProgram.cs`:
 
@@ -152,13 +160,19 @@ await printer.SendAsync(comandoCru);
 
 | Método | Descrição |
 |---|---|
-| `CreateMm(largura, altura, qtd)` | Cria a etiqueta a partir do tamanho em milímetros (203dpi → 8 dots/mm) |
-| `CreateDots(largura, altura, qtd)` | Cria a etiqueta já em dots, para controle fino |
+| `CreateMm(largura, altura, qtd, gapMm)` | Cria etiqueta de altura fixa a partir do tamanho em milímetros (203dpi → 8 dots/mm) |
+| `CreateDots(largura, altura, qtd, gapDots)` | Igual acima, mas o tamanho já em dots |
+| `CreateAutoHeightMm(largura, qtd, gapMm)` | Cria etiqueta com **altura calculada automaticamente** a partir do conteúdo adicionado (posições Y de texto/código de barras/QR/imagem) — sem precisar saber de antemão |
+| `CreateAutoHeightDots(largura, qtd, gapDots)` | Igual acima, largura já em dots |
 | `AddText(x, y, texto, font, size)` | Adiciona uma linha de texto |
 | `AddBarcode(x, y, dados, tipo, altura, ...)` | Adiciona código de barras 1D (CODE128, EAN13, etc.) |
 | `AddQrCode(x, y, dados, cellSize)` | Adiciona QR Code |
 | `AddLine(x, y, comprimento, espessura)` | Linha/separador |
-| `Build()` | Gera os bytes CPCL prontos para `SendAsync` |
+| `AddImage(x, y, imageBytes, maxWidthDots, maxHeightDots)` | Converte um PNG/JPG (via SkiaSharp) para o comando CPCL `EG` — logos, gráficos, qualquer bitmap |
+| `AddRawCommand(blocoCpcl)` | Anexa uma ou mais linhas de comando CPCL cru, para casos não cobertos pela API fluente; ainda entra no cálculo automático de altura |
+| `Build()` | Gera os bytes CPCL finais (header, `TONE`/`SETMAG`, acentos removidos, `FORM`/`PRINT`) prontos para `SendAsync` |
+
+O `RongtaBlePrinter` também expõe `DetectedWriteEndpoint` depois de conectar, para você logar/inspecionar qual par serviço/characteristic funcionou de fato no seu aparelho.
 
 ## 🔍 Ferramenta de descoberta
 
@@ -211,6 +225,10 @@ Ela escaneia por 15s, conecta no primeiro dispositivo com nome contendo `RPP`/`R
 - Testado apenas em **uma unidade física** (firmware "BLE-TX", nome `RPP30-C860`). Contribuições confirmando/corrigindo UUIDs em outros lotes são bem-vindas.
 - **iOS**: a API é abstraída pelo Shiny.BluetoothLE e deveria funcionar em teoria, mas ainda não foi validado num iPhone real.
 - Codepage fixo em ISO-8859-1 — acentuação pode variar dependendo da codepage configurada na impressora (`CP850`/`CP1252`/etc, ver menu físico).
+
+## 📦 Publicação (release)
+
+A publicação no NuGet.org usa [Trusted Publishing](https://learn.microsoft.com/pt-br/nuget/nuget-org/trusted-publishing) — nenhuma API key fica armazenada em lugar nenhum. O `.github/workflows/publish.yml` solicita um token OIDC de curta duração do GitHub Actions, troca por uma chave de API temporária do NuGet e publica o pacote. Roda via `workflow_dispatch` ou ao dar push numa tag `v*`.
 
 ## 🤝 Contribuindo
 
