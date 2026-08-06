@@ -1,17 +1,17 @@
 namespace RongtaBleSdk;
 
 /// <summary>
-/// UUIDs e parâmetros de transporte confirmados via engenharia reversa em uma Rongta RPP30 física
-/// (firmware BLE-TX, "RPP30-C860"). Não são documentados oficialmente pela Rongta — podem variar
-/// por lote/firmware, por isso a descoberta em <see cref="RongtaBlePrinter"/> tenta uma lista de
-/// UUIDs conhecidos e cai para uma busca genérica por characteristic com WRITE.
+/// UUIDs and transport parameters confirmed via reverse-engineering on a physical Rongta RPP30
+/// (firmware "BLE-TX", "RPP30-C860"). Not officially documented by Rongta — they may vary by
+/// batch/firmware, which is why discovery in <see cref="RongtaBlePrinter"/> tries a list of known
+/// UUIDs and falls back to a generic search for a characteristic with WRITE.
 /// </summary>
 public static class RongtaProtocol
 {
     /// <summary>
-    /// Pares (serviço, characteristic de escrita) conhecidos, testados em campo. O primeiro é o
-    /// confirmado na RPP30; os demais são variações comuns na mesma família de chip UART BLE
-    /// (CC41/HM-10/JDY) usada por vários fabricantes chineses de impressora portátil.
+    /// Known (service, write characteristic) pairs, tested in the field. The first one is the
+    /// one confirmed on the RPP30; the rest are common variants seen on the same BLE UART chip
+    /// family (CC41/HM-10/JDY) used by several Chinese portable-printer manufacturers.
     /// </summary>
     public static readonly (string ServiceUuid, string WriteCharacteristicUuid, string? NotifyCharacteristicUuid)[] KnownUuidPairs =
     [
@@ -22,16 +22,16 @@ public static class RongtaProtocol
         ("6e400001-b5a3-f393-e0a9-e50e24dcca9e", "6e400002-b5a3-f393-e0a9-e50e24dcca9e", "6e400003-b5a3-f393-e0a9-e50e24dcca9e"), // Nordic UART Service
     ];
 
-    /// <summary>Prefixo padrão do nome anunciado pela RPP30 ("RPP30-XXXX").</summary>
+    /// <summary>Default name prefix advertised by the RPP30 ("RPP30-XXXX").</summary>
     public const string DeviceNamePrefix = "RPP30";
 
-    /// <summary>MTU alvo negociado na conexão (Android; iOS/Windows negociam automaticamente).</summary>
+    /// <summary>Target MTU negotiated on connect (Android; iOS/Windows negotiate automatically).</summary>
     public const int TargetMtu = 512;
 
-    /// <summary>Chunk seguro quando não há negociação de MTU disponível (confirmado funcionando).</summary>
+    /// <summary>Safe chunk size when no MTU negotiation is available (confirmed working).</summary>
     public const int FallbackChunkSize = 20;
 
-    /// <summary>Chunk máximo mesmo com MTU grande — módulos UART BLE chineses costumam engasgar acima disso.</summary>
+    /// <summary>Maximum chunk size even with a large MTU — Chinese BLE UART modules tend to choke above this.</summary>
     public const int MaxSafeChunkSize = 180;
 
     public static readonly TimeSpan DefaultChunkDelay = TimeSpan.FromMilliseconds(20);

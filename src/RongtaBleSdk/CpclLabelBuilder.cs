@@ -4,10 +4,10 @@ using System.Text;
 namespace RongtaBleSdk;
 
 /// <summary>
-/// Monta comandos CPCL (Comtec Printer Command Language) para etiquetas, no dialeto aceito pela RPP30.
-/// Coordenadas em dots (203dpi -> ~8 dots/mm). Calcula a altura da etiqueta automaticamente a partir
-/// do conteúdo quando não informada explicitamente, remove acentos (CPCL costuma ser ASCII-only) e
-/// normaliza comandos abreviados.
+/// Builds CPCL (Comtec Printer Command Language) commands for labels, in the dialect accepted by
+/// the RPP30. Coordinates are in dots (203dpi -> ~8 dots/mm). Automatically calculates the label
+/// height from the added content when not given explicitly, strips diacritics (CPCL is usually
+/// ASCII-only) and normalizes abbreviated commands.
 /// </summary>
 public sealed class CpclLabelBuilder
 {
@@ -41,26 +41,26 @@ public sealed class CpclLabelBuilder
         _qty = qty;
     }
 
-    /// <summary>Cria um builder de etiqueta com altura fixa, a partir do tamanho em milímetros.</summary>
+    /// <summary>Creates a fixed-height label builder from a size in millimeters.</summary>
     public static CpclLabelBuilder CreateMm(double widthMm, double heightMm, int quantity = 1, double gapMm = 0)
         => new((int)(widthMm * DotsPerMm), (int)(heightMm * DotsPerMm), (int)(gapMm * DotsPerMm), quantity);
 
     /// <summary>
-    /// Cria um builder de etiqueta com altura calculada automaticamente a partir do conteúdo adicionado
-    /// (útil quando o comprimento da etiqueta varia conforme os dados, ex.: papel contínuo/plástico).
+    /// Creates a label builder whose height is calculated automatically from the content added
+    /// (useful when the label length varies with the data, e.g. continuous/plastic paper).
     /// </summary>
     public static CpclLabelBuilder CreateAutoHeightMm(double widthMm, int quantity = 1, double gapMm = 0)
         => new((int)(widthMm * DotsPerMm), null, (int)(gapMm * DotsPerMm), quantity);
 
-    /// <summary>Cria um builder de etiqueta a partir do tamanho já em dots.</summary>
+    /// <summary>Creates a label builder from a size already in dots.</summary>
     public static CpclLabelBuilder CreateDots(int widthDots, int heightDots, int quantity = 1, int gapDots = 0)
         => new(widthDots, heightDots, gapDots, quantity);
 
-    /// <summary>Como <see cref="CreateAutoHeightMm"/>, mas com a largura já em dots.</summary>
+    /// <summary>Same as <see cref="CreateAutoHeightMm"/>, but with the width already in dots.</summary>
     public static CpclLabelBuilder CreateAutoHeightDots(int widthDots, int quantity = 1, int gapDots = 0)
         => new(widthDots, null, gapDots, quantity);
 
-    /// <summary>Adiciona uma linha de texto. Fonte 0-7 (ver tabela de fontes internas da impressora).</summary>
+    /// <summary>Adds a line of text. Font 0-7 (see the printer's internal font table).</summary>
     public CpclLabelBuilder AddText(int x, int y, string text, int font = 4, int size = 0)
     {
         _body.Append($"TEXT {font} {size} {x} {y} {Escape(text)}\r\n");
@@ -68,7 +68,7 @@ public sealed class CpclLabelBuilder
         return this;
     }
 
-    /// <summary>Adiciona um código de barras 1D (CODE128, EAN13, etc).</summary>
+    /// <summary>Adds a 1D barcode (CODE128, EAN13, etc).</summary>
     public CpclLabelBuilder AddBarcode(int x, int y, string data, string type = "128", int height = 60,
         int narrowBar = 2, int wideBar = 2, bool printHumanReadable = true)
     {
@@ -83,7 +83,7 @@ public sealed class CpclLabelBuilder
         return this;
     }
 
-    /// <summary>Adiciona um QR Code.</summary>
+    /// <summary>Adds a QR code.</summary>
     public CpclLabelBuilder AddQrCode(int x, int y, string data, int cellSize = 6, int estimatedModules = 25)
     {
         _body.Append($"B QR {x} {y} M 2 U {cellSize}\r\n");
@@ -93,7 +93,7 @@ public sealed class CpclLabelBuilder
         return this;
     }
 
-    /// <summary>Adiciona uma linha horizontal (ex.: separador).</summary>
+    /// <summary>Adds a horizontal line (e.g. separator).</summary>
     public CpclLabelBuilder AddLine(int x, int y, int lengthDots, int thicknessDots = 2)
     {
         _body.Append($"LINE {x} {y} {x + lengthDots} {y + thicknessDots} {thicknessDots}\r\n");
@@ -102,13 +102,13 @@ public sealed class CpclLabelBuilder
     }
 
     /// <summary>
-    /// Adiciona uma imagem (logo, gráfico) convertida para o formato monocromático CPCL (comando EG).
+    /// Adds an image (logo, graphic) converted to the CPCL monochrome format (the <c>EG</c> command).
     /// </summary>
-    /// <param name="x">Posição X em dots.</param>
-    /// <param name="y">Posição Y em dots.</param>
-    /// <param name="imageBytes">Bytes da imagem (PNG/JPG/etc — qualquer formato suportado pelo SkiaSharp).</param>
-    /// <param name="maxWidthDots">Largura máxima em dots (a imagem é redimensionada mantendo proporção). Padrão: largura da etiqueta.</param>
-    /// <param name="maxHeightDots">Altura máxima em dots, se quiser limitar (ex.: logos no topo da etiqueta).</param>
+    /// <param name="x">X position in dots.</param>
+    /// <param name="y">Y position in dots.</param>
+    /// <param name="imageBytes">Image bytes (PNG/JPG/etc — any format supported by SkiaSharp).</param>
+    /// <param name="maxWidthDots">Maximum width in dots (the image is resized keeping aspect ratio). Defaults to the label width.</param>
+    /// <param name="maxHeightDots">Maximum height in dots, if you want to cap it (e.g. logos at the top of the label).</param>
     public CpclLabelBuilder AddImage(int x, int y, byte[] imageBytes, int? maxWidthDots = null, int? maxHeightDots = null)
     {
         var (command, height) = CpclImageConverter.ConvertToEgCommand(imageBytes, x, y, maxWidthDots ?? _widthDots, maxHeightDots);
@@ -121,9 +121,9 @@ public sealed class CpclLabelBuilder
     }
 
     /// <summary>
-    /// Anexa um bloco de comandos CPCL cru (uma ou mais linhas), para casos não cobertos pela API
-    /// fluente — ex.: conteúdo já montado por um formatador próprio. Faz um parsing best-effort das
-    /// linhas TEXT/T e LINE/L para manter o cálculo automático de altura funcionando mesmo aqui.
+    /// Appends a block of raw CPCL commands (one or more lines), for cases not covered by the fluent
+    /// API — e.g. content already assembled by your own formatter. Does a best-effort parse of
+    /// TEXT/T and LINE/L lines to keep automatic height calculation working here too.
     /// </summary>
     public CpclLabelBuilder AddRawCommand(string cpclBlock)
     {
@@ -146,18 +146,18 @@ public sealed class CpclLabelBuilder
 
         var cmd = parts[0].ToUpperInvariant();
 
-        // T/TEXT font size x y ...  -> Y no índice 4
+        // T/TEXT font size x y ...  -> Y is at index 4
         if ((cmd == "T" || cmd == "TEXT") && parts.Length >= 5 && int.TryParse(parts[4], out var textY))
         {
             var fontHeight = int.TryParse(parts[1], out var font) ? GetFontHeight(font) : 24;
             TrackHeight(textY, fontHeight);
         }
-        // L/LINE x1 y1 x2 y2 ... -> Y no índice 2
+        // L/LINE x1 y1 x2 y2 ... -> Y is at index 2
         else if ((cmd == "L" || cmd == "LINE") && parts.Length >= 3 && int.TryParse(parts[2], out var lineY))
         {
             TrackHeight(lineY, 0);
         }
-        // EG bytesPerRow height x y ... -> altura no índice 2, Y no índice 4
+        // EG bytesPerRow height x y ... -> height at index 2, Y at index 4
         else if (cmd == "EG" && parts.Length >= 5 &&
                  int.TryParse(parts[2], out var imgHeight) && int.TryParse(parts[4], out var imgY))
         {
@@ -165,7 +165,7 @@ public sealed class CpclLabelBuilder
         }
     }
 
-    /// <summary>Gera o comando CPCL final pronto para envio via BLE.</summary>
+    /// <summary>Generates the final CPCL command, ready to send over BLE.</summary>
     public byte[] Build()
     {
         var height = _heightDots ?? Math.Max(MinAutoHeightDots, _maxYReached + AutoHeightMargin);
@@ -175,7 +175,7 @@ public sealed class CpclLabelBuilder
         sb.Append($"! 0 203 203 {totalHeight} {_qty}\r\n");
         sb.Append($"PAGE-WIDTH {_widthDots}\r\n");
 
-        // Sem gap definido = modo contínuo/plástico: desabilita o sensor de gap (evita form-feed excessivo).
+        // No gap defined = continuous/plastic mode: disables the gap sensor (avoids excessive form-feed).
         if (_gapDots <= 0)
             sb.Append("JOURNAL\r\n");
 
@@ -196,8 +196,8 @@ public sealed class CpclLabelBuilder
     static string Escape(string text) => text.Replace("\r", "").Replace("\n", " ");
 
     /// <summary>
-    /// Normaliza EOL para CRLF e remove diacríticos (á, ç, ã, etc.) — CPCL costuma ser ASCII-only
-    /// e etiquetas com acentuação viram lixo em boa parte das impressoras chinesas.
+    /// Normalizes line endings to CRLF and strips diacritics (á, ç, ã, etc.) — CPCL is effectively
+    /// ASCII-only on most of these printers, and accented labels turn into garbage otherwise.
     /// </summary>
     static string NormalizeAndStripDiacritics(string body)
     {

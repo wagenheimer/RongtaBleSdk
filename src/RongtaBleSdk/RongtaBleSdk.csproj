@@ -11,7 +11,7 @@
 
     <PackageId>RongtaBleSdk</PackageId>
     <Authors>Cezar Wagenheimer</Authors>
-    <Description>SDK .NET MAUI não-oficial para impressoras de etiqueta Rongta (testado na RPP30) via Bluetooth Low Energy, usando Shiny.BluetoothLE e comandos CPCL.</Description>
+    <Description>Unofficial .NET MAUI SDK for Rongta label printers (tested on the RPP30) over Bluetooth Low Energy, using Shiny.BluetoothLE and CPCL commands.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>rongta;rpp30;ble;bluetooth;label-printer;cpcl;maui;dotnet</PackageTags>
     <RepositoryUrl>https://github.com/wagenheimer/RongtaBleSdk</RepositoryUrl>

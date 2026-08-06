@@ -4,15 +4,15 @@ using SkiaSharp;
 namespace RongtaBleSdk;
 
 /// <summary>
-/// Converte imagens (PNG/JPG/etc.) para o formato monocromático usado pelo comando CPCL <c>EG</c>,
-/// permitindo imprimir logos, gráficos ou qualquer bitmap na etiqueta.
+/// Converts images (PNG/JPG/etc.) to the monochrome format used by the CPCL <c>EG</c> command,
+/// allowing logos, graphics, or any bitmap to be printed on the label.
 /// </summary>
 public static class CpclImageConverter
 {
     /// <summary>
-    /// Converte uma imagem para o comando CPCL EG, redimensionando-a para caber nos limites informados.
+    /// Converts an image to the CPCL EG command, resizing it to fit the given limits.
     /// </summary>
-    /// <returns>O comando CPCL pronto (terminado em CRLF) e a altura final em dots ocupada pela imagem.</returns>
+    /// <returns>The ready CPCL command (CRLF-terminated) and the final height in dots occupied by the image.</returns>
     public static (string Command, int HeightDots) ConvertToEgCommand(
         byte[] imageBytes, int x, int y, int maxWidthDots, int? maxHeightDots = null, int blackThreshold = 215)
     {

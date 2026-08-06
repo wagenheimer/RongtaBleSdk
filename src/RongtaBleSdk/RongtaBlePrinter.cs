@@ -3,9 +3,9 @@ using Shiny.BluetoothLE;
 namespace RongtaBleSdk;
 
 /// <summary>
-/// Cliente BLE de alto nível para impressoras Rongta RPP30 (e possivelmente outros modelos da mesma
-/// família de chip UART BLE). Usa Shiny.BluetoothLE como transporte. Negocia MTU, tenta uma lista de
-/// UUIDs conhecidos (com fallback genérico) e reenvia blocos com retry em caso de falha transitória.
+/// High-level BLE client for Rongta RPP30 printers (and possibly other models from the same
+/// BLE UART chip family). Uses Shiny.BluetoothLE as the transport. Negotiates MTU, tries a list of
+/// known UUIDs (with a generic fallback), and retries chunks on transient BLE failures.
 /// </summary>
 public sealed class RongtaBlePrinter : IAsyncDisposable
 {
@@ -20,18 +20,18 @@ public sealed class RongtaBlePrinter : IAsyncDisposable
         _bleManager = bleManager;
     }
 
-    /// <summary>Peripheral atualmente conectado, se houver.</summary>
+    /// <summary>Currently connected peripheral, if any.</summary>
     public IPeripheral? Peripheral => _peripheral;
 
     public bool IsConnected => _peripheral?.Status == ConnectionState.Connected && _writeCharacteristic != null;
 
-    /// <summary>UUID do serviço/characteristic de escrita efetivamente encontrado nesta impressora.</summary>
+    /// <summary>UUID of the write service/characteristic actually found on this printer.</summary>
     public (string ServiceUuid, string CharacteristicUuid)? DetectedWriteEndpoint =>
         _writeCharacteristic is null ? null : (_writeCharacteristic.Service.Uuid, _writeCharacteristic.Uuid);
 
     /// <summary>
-    /// Escaneia até encontrar um dispositivo cujo nome comece com o prefixo informado
-    /// (padrão: "RPP30") e conecta nele.
+    /// Scans until it finds a device whose name starts with the given prefix
+    /// (default: "RPP30") and connects to it.
     /// </summary>
     public async Task<IPeripheral> ScanAndConnectAsync(
         string namePrefix = RongtaProtocol.DeviceNamePrefix,
@@ -40,7 +40,7 @@ public sealed class RongtaBlePrinter : IAsyncDisposable
     {
         var access = await _bleManager.RequestAccessAsync();
         if (access != Shiny.AccessState.Available)
-            throw new InvalidOperationException($"Acesso Bluetooth não disponível: {access}");
+            throw new InvalidOperationException($"Bluetooth access not available: {access}");
 
         var timeout = scanTimeout ?? TimeSpan.FromSeconds(15);
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -63,7 +63,7 @@ public sealed class RongtaBlePrinter : IAsyncDisposable
             }
             catch (OperationCanceledException) when (found != null)
             {
-                // encontrado — cancelamento esperado
+                // found — cancellation was expected
             }
             finally
             {
@@ -72,23 +72,23 @@ public sealed class RongtaBlePrinter : IAsyncDisposable
         }
 
         if (found is null)
-            throw new TimeoutException($"Nenhuma impressora com nome iniciando em '{namePrefix}' encontrada em {timeout.TotalSeconds}s.");
+            throw new TimeoutException($"No printer with a name starting in '{namePrefix}' found within {timeout.TotalSeconds}s.");
 
         await ConnectAsync(found, cancellationToken);
         return found;
     }
 
     /// <summary>
-    /// Conecta a um peripheral já descoberto (ex.: via scan próprio da UI), negocia MTU e descobre
-    /// a characteristic de escrita tentando <see cref="RongtaProtocol.KnownUuidPairs"/> e, em último
-    /// caso, qualquer characteristic com propriedade WRITE/WRITE_NO_RESPONSE.
+    /// Connects to an already-discovered peripheral (e.g. via your own scanning UI), negotiates MTU,
+    /// and discovers the write characteristic by trying <see cref="RongtaProtocol.KnownUuidPairs"/>
+    /// and, as a last resort, any characteristic with WRITE/WRITE_NO_RESPONSE.
     /// </summary>
     public async Task ConnectAsync(IPeripheral peripheral, CancellationToken cancellationToken = default)
     {
         await peripheral.ConnectAsync(cancelToken: cancellationToken);
         _peripheral = peripheral;
 
-        // Negocia MTU maior (efeito real só em Android; iOS/Windows negociam sozinhos).
+        // Negotiate a larger MTU (only has a real effect on Android; iOS/Windows negotiate on their own).
         var mtu = await peripheral.TryRequestMtuAsync(RongtaProtocol.TargetMtu);
         _chunkSize = mtu > 23
             ? Math.Min(mtu - 3, RongtaProtocol.MaxSafeChunkSize)
@@ -112,17 +112,17 @@ public sealed class RongtaBlePrinter : IAsyncDisposable
             }
             catch
             {
-                // UUID não existe nesse aparelho — tenta o próximo candidato.
+                // UUID doesn't exist on this device — try the next candidate.
             }
         }
 
-        // Fallback genérico: primeira characteristic com WRITE em qualquer serviço.
+        // Generic fallback: first characteristic with WRITE in any service.
         var all = await peripheral.GetAllCharacteristicsAsync(cancellationToken);
         var generic = all.FirstOrDefault(c => c.CanWrite());
         if (generic is null)
             throw new InvalidOperationException(
-                "Nenhuma characteristic com WRITE/WRITE_NO_RESPONSE encontrada nesta impressora. " +
-                "Rode a ferramenta de descoberta (tools/RongtaBleDiscovery) para investigar o GATT real do aparelho.");
+                "No characteristic with WRITE/WRITE_NO_RESPONSE found on this printer. " +
+                "Run the discovery tool (tools/RongtaBleDiscovery) to inspect the device's real GATT table.");
 
         SetWriteCharacteristic(generic);
     }
@@ -133,18 +133,18 @@ public sealed class RongtaBlePrinter : IAsyncDisposable
         _writeWithResponse = !characteristic.CanWriteWithoutResponse();
     }
 
-    /// <summary>Envia um comando (CPCL ou bytes crus) em blocos, com retry em falhas transitórias de BLE.</summary>
+    /// <summary>Sends a command (CPCL or raw bytes) in chunks, retrying on transient BLE failures.</summary>
     public async Task SendAsync(byte[] payload, CancellationToken cancellationToken = default)
     {
         if (_peripheral is null || _writeCharacteristic is null || !IsConnected)
-            throw new InvalidOperationException("Impressora não conectada. Chame ConnectAsync/ScanAndConnectAsync primeiro.");
+            throw new InvalidOperationException("Printer not connected. Call ConnectAsync/ScanAndConnectAsync first.");
 
         for (var offset = 0; offset < payload.Length; offset += _chunkSize)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             if (_peripheral.Status != ConnectionState.Connected)
-                throw new IOException($"Impressora desconectada durante o envio (offset={offset}/{payload.Length}).");
+                throw new IOException($"Printer disconnected during send (offset={offset}/{payload.Length}).");
 
             var length = Math.Min(_chunkSize, payload.Length - offset);
             var chunk = new byte[length];
@@ -175,11 +175,11 @@ public sealed class RongtaBlePrinter : IAsyncDisposable
         }
 
         throw new IOException(
-            $"Falha ao enviar bloco via BLE após {RongtaProtocol.WriteRetryCount} tentativas (offset={offset}).",
+            $"Failed to send chunk over BLE after {RongtaProtocol.WriteRetryCount} attempts (offset={offset}).",
             lastError);
     }
 
-    /// <summary>Monta e envia uma etiqueta CPCL.</summary>
+    /// <summary>Builds and sends a CPCL label.</summary>
     public Task PrintAsync(CpclLabelBuilder label, CancellationToken cancellationToken = default)
         => SendAsync(label.Build(), cancellationToken);
 
