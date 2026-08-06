@@ -1,51 +1,85 @@
-# RongtaBleSdk
+<div align="center">
 
-SDK **não-oficial** em .NET MAUI para imprimir etiquetas em impressoras portáteis Rongta via **Bluetooth Low Energy (BLE)**, testado e confirmado na **Rongta RPP30**.
+# 🖨️ RongtaBleSdk
 
-> A Rongta não documenta publicamente os UUIDs de serviço/característica BLE da RPP30. O SDK oficial deles (Android/iOS) só documenta o fluxo via Bluetooth clássico (SPP). Este projeto nasceu de engenharia reversa feita com um dispositivo físico real, usando `Windows.Devices.Bluetooth` para enumerar o GATT da impressora e confirmar os UUIDs por tentativa e erro — não são um palpite, foram testados imprimindo uma etiqueta real.
+**SDK .NET MAUI não-oficial para imprimir etiquetas via Bluetooth Low Energy na Rongta RPP30**
 
-## Por que este projeto existe
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![.NET](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/)
+[![MAUI](https://img.shields.io/badge/MAUI-Android%20%7C%20iOS%20%7C%20MacCatalyst-blue)](https://learn.microsoft.com/dotnet/maui/)
+[![Status](https://img.shields.io/badge/status-confirmado%20em%20dispositivo%20real-brightgreen)](#-confirmado-de-verdade-não-é-palpite)
 
-Ao integrar uma RPP30 via BLE (necessário para iOS, que não permite Bluetooth clássico em apps), não existe:
-- Um manual de UUIDs BLE publicado pela Rongta;
-- Um exemplo documentado de uso do `BleConfigBean`/`BleInterface` no SDK Android oficial deles (que existe no jar, mas não tem exemplo no manual).
+Nenhum UUID BLE oficial documentado pela Rongta existe por aí.
+Este repositório existe porque alguém precisava imprimir uma etiqueta numa RPP30 via BLE — e teve que descobrir tudo na marra.
 
-O SDK oficial da Rongta (Android/iOS/Windows/Linux) documenta apenas Bluetooth clássico (SPP). Quem precisa de BLE puro — iOS sem SPP, apps já usando stack BLE (Shiny.BluetoothLE, Plugin.BLE, CoreBluetooth, Web Bluetooth) — fica sem referência oficial.
+[Por quê](#-por-que-este-projeto-existe) ·
+[UUIDs confirmados](#-uuids-confirmados-rpp30-firmware-ble-tx) ·
+[Instalação](#-instalação) ·
+[Uso](#-uso) ·
+[Ferramenta de descoberta](#-ferramenta-de-descoberta) ·
+[Contribuindo](#-contribuindo)
 
-Este repositório documenta o que foi confirmado num dispositivo físico e oferece um SDK pronto para uso em apps .NET MAUI.
+</div>
 
-## UUIDs confirmados (RPP30, firmware "BLE-TX", nome anunciado `RPP30-XXXX`)
+---
+
+## 📖 Por que este projeto existe
+
+A **Rongta RPP30** é uma impressora portátil de etiquetas térmica, com Bluetooth "dual mode" (clássico + BLE). Se você quer imprimir nela a partir de:
+
+- **iOS** → Apple não permite Bluetooth clássico (SPP) em apps de terceiros. Só resta BLE.
+- **App próprio já usando stack BLE** (Shiny.BluetoothLE, Plugin.BLE, CoreBluetooth, Web Bluetooth, ESP32...) → sem depender do SDK nativo da Rongta.
+
+...você esbarra num buraco: **a Rongta não publica os UUIDs de serviço/característica BLE em lugar nenhum**. O SDK oficial deles (Android/iOS/Windows/Linux) documenta apenas o fluxo via Bluetooth clássico (`BluetoothEdrConfigBean`, UUID SPP padrão `00001101-...`). As classes de BLE (`BleDriver`, `BleConfigBean`) existem dentro do `.jar`, usam a lib open-source [FastBLE](https://github.com/Jasonchenlijian/FastBLE) por baixo — mas não têm nenhum exemplo documentado no manual oficial.
+
+Então conectamos numa RPP30 física, enumeramos o GATT real dela, e confirmamos tudo imprimindo uma etiqueta de verdade. Este repositório é o resultado.
+
+## ✅ Confirmado de verdade (não é palpite)
+
+Diferente de UUIDs "prováveis" copiados de fóruns, os valores abaixo foram **validados numa RPP30 física**:
+
+1. Escaneada via `Windows.Devices.Bluetooth.Advertisement` → dispositivo `RPP30-C860` encontrado.
+2. Conectada e enumerados todos os serviços/characteristics reais via GATT (`GetGattServicesAsync` + `GetCharacteristicsAsync`).
+3. Enviado um comando CPCL de teste, em blocos de 20 bytes, pela characteristic de escrita.
+4. **A impressora imprimiu a etiqueta.** ✔️
+
+## 🔌 UUIDs confirmados (RPP30, firmware "BLE-TX")
 
 | Papel | UUID |
 |---|---|
-| Serviço (UART BLE, família CC41/HM-10/JDY) | `49535343-fe7d-4ae5-8fa9-9fafd205e455` |
-| Characteristic de escrita (WRITE + WRITE_NO_RESPONSE) | `49535343-8841-43f4-a8d4-ecbe34729bb3` |
-| Characteristic de notificação (status) | `49535343-1e4d-4bd9-ba61-23c647249616` |
+| **Serviço** (UART BLE — família de chip CC41/HM-10/JDY) | `49535343-fe7d-4ae5-8fa9-9fafd205e455` |
+| **Characteristic de escrita** (`WRITE` + `WRITE_NO_RESPONSE`) | `49535343-8841-43f4-a8d4-ecbe34729bb3` |
+| **Characteristic de notificação** (status) | `49535343-1e4d-4bd9-ba61-23c647249616` |
 
-⚠️ Podem variar por lote/revisão de firmware. O repositório inclui a [ferramenta de descoberta](tools/RongtaBleDiscovery) usada para confirmar isso — rode-a na sua impressora antes de assumir que os UUIDs acima batem com o seu aparelho.
+> ⚠️ **Podem variar por lote/revisão de firmware.** Antes de confiar cegamente nesses valores no seu aparelho, rode a [ferramenta de descoberta](#-ferramenta-de-descoberta) incluída neste repo — leva menos de 1 minuto.
 
-Outros serviços também expostos pela RPP30 testada (não usados por este SDK, mas documentados para referência):
+<details>
+<summary><strong>Outros serviços expostos pela RPP30 testada (não usados por este SDK, documentados por completude)</strong></summary>
 
 ```
 0000ff80-0000-1000-8000-00805f9b34fb
-  0000ff82 [WRITE, WRITE_NO_RESPONSE]
-  0000ff81 [NOTIFY]
+  0000ff82  [WRITE, WRITE_NO_RESPONSE]
+  0000ff81  [NOTIFY]
 
 0000ff00-0000-1000-8000-00805f9b34fb
-  0000ff02 [WRITE, WRITE_NO_RESPONSE]
-  0000ff01 [NOTIFY]
-  0000ff03 [NOTIFY]
+  0000ff02  [WRITE, WRITE_NO_RESPONSE]
+  0000ff01  [NOTIFY]
+  0000ff03  [NOTIFY]
 
 0000ff10-0000-1000-8000-00805f9b34fb
-  0000ff11 [WRITE_NO_RESPONSE, NOTIFY]
-  0000ff12 [WRITE_NO_RESPONSE, NOTIFY]
+  0000ff11  [WRITE_NO_RESPONSE, NOTIFY]
+  0000ff12  [WRITE_NO_RESPONSE, NOTIFY]
 ```
 
-## Comando suportado: CPCL
+Provavelmente variações/duplicatas do mesmo transporte serial, expostas por compatibilidade com apps diferentes. Não investigadas a fundo.
 
-A RPP30 aceita CPCL e ESC/POS (configurável no menu físico: `Power` + `Feed` → `Cmd Mode`). Este SDK v0.1 gera **CPCL** — confirmado imprimindo uma etiqueta de teste real via BLE.
+</details>
 
-## Instalação
+## 🧾 Comando de impressão: CPCL
+
+A RPP30 aceita **CPCL** e **ESC/POS** (alternável no menu físico: segure `Power` e `Feed` → `Cmd Mode: CPCL/ESC`). Este SDK gera **CPCL** — confirmado imprimindo uma etiqueta real via BLE. TSPL e ZPL não foram testados (ver [Limitações](#-limitações-conhecidas--próximos-passos)).
+
+## 📦 Instalação
 
 ```xml
 <PackageReference Include="RongtaBleSdk" Version="0.1.0" />
@@ -55,18 +89,21 @@ A RPP30 aceita CPCL e ESC/POS (configurável no menu físico: `Power` + `Feed` �
 Registre no `MauiProgram.cs`:
 
 ```csharp
-builder.Services.AddBluetoothLE();
-builder.Services.AddRongtaBlePrinter();
+var builder = MauiApp.CreateBuilder();
+
+builder.Services.AddBluetoothLE();      // transporte BLE (Shiny.BluetoothLE)
+builder.Services.AddRongtaBlePrinter(); // RongtaBlePrinter como singleton
 ```
 
-## Uso
+## 🚀 Uso
 
 ```csharp
 public class EtiquetaService(RongtaBlePrinter printer)
 {
     public async Task ImprimirPesagemAsync(string identificacao, double pesoKg)
     {
-        await printer.ScanAndConnectAsync(); // procura "RPP30-XXXX"
+        // Escaneia até achar um dispositivo "RPP30-XXXX" e conecta
+        await printer.ScanAndConnectAsync();
 
         var etiqueta = CpclLabelBuilder
             .CreateMm(widthMm: 120, heightMm: 80)
@@ -81,22 +118,103 @@ public class EtiquetaService(RongtaBlePrinter printer)
 }
 ```
 
-## Ferramenta de descoberta (`tools/RongtaBleDiscovery`)
+### Conectando a um peripheral já escaneado pela sua própria UI
 
-Console app Windows (`Windows.Devices.Bluetooth`) que escaneia BLE, conecta na impressora e lista todos os serviços/characteristics reais com suas propriedades (WRITE/NOTIFY/READ). Use antes de confiar nos UUIDs acima com um lote diferente de RPP30, ou para adaptar este SDK a outro modelo Rongta.
+```csharp
+// se você já tem sua tela de scan/pareamento (ex.: reaproveitando IBleManager diretamente)
+await printer.ConnectAsync(peripheralEscolhido);
+await printer.PrintAsync(etiqueta);
+```
+
+### Enviando bytes crus (ex.: outro dialeto de comando)
+
+```csharp
+byte[] comandoCru = Encoding.ASCII.GetBytes("! 0 200 200 210 1\r\nTEXT 4 0 30 30 OLA\r\nFORM\r\nPRINT\r\n");
+await printer.SendAsync(comandoCru);
+```
+
+## 🧩 API do `CpclLabelBuilder`
+
+| Método | Descrição |
+|---|---|
+| `CreateMm(largura, altura, qtd)` | Cria a etiqueta a partir do tamanho em milímetros (203dpi → 8 dots/mm) |
+| `CreateDots(largura, altura, qtd)` | Cria a etiqueta já em dots, para controle fino |
+| `AddText(x, y, texto, font, size)` | Adiciona uma linha de texto |
+| `AddBarcode(x, y, dados, tipo, altura, ...)` | Adiciona código de barras 1D (CODE128, EAN13, etc.) |
+| `AddQrCode(x, y, dados, cellSize)` | Adiciona QR Code |
+| `AddLine(x, y, comprimento, espessura)` | Linha/separador |
+| `Build()` | Gera os bytes CPCL prontos para `SendAsync` |
+
+## 🔍 Ferramenta de descoberta
+
+Console app Windows (`Windows.Devices.Bluetooth`) que escaneia BLE, conecta na impressora e lista **todos** os serviços/characteristics reais com suas propriedades (`WRITE` / `WRITE_NO_RESPONSE` / `NOTIFY` / `READ`) — o mesmo processo usado para confirmar os UUIDs deste README. Rode-a se:
+
+- Sua RPP30 tem um lote/firmware diferente e os UUIDs acima não bateram;
+- Você quer adaptar este SDK para outro modelo Rongta.
 
 ```powershell
 cd tools/RongtaBleDiscovery
 dotnet run -c Release
 ```
 
-## Limitações conhecidas / próximos passos
+Ela escaneia por 15s, conecta no primeiro dispositivo com nome contendo `RPP`/`RONGTA`/`Printer` (ou deixa você digitar o endereço manualmente) e imprime toda a árvore GATT no console — opcionalmente também envia uma etiqueta de teste CPCL para validar a característica de escrita encontrada.
 
-- Testado apenas em CPCL. TSPL/ESC/ZPL não foram testados neste projeto (a RPP30 suporta os quatro, configurável no menu físico).
+## 🗺️ Arquitetura
+
+```
+┌─────────────────────────┐
+│   Seu App MAUI            │
+│   (Android / iOS / Mac)   │
+└────────────┬───────────┘
+             │ DI: RongtaBlePrinter
+             ▼
+┌─────────────────────────┐
+│   RongtaBleSdk             │
+│  ┌───────────────────┐  │
+│  │ CpclLabelBuilder    │  │   texto, barcode, QR → bytes CPCL
+│  └───────────────────┘  │
+│  ┌───────────────────┐  │
+│  │ RongtaBlePrinter    │  │   scan, connect, chunk & write
+│  └─────────┬─────────┘  │
+└────────────┼───────────┘
+             │ IBleManager / IPeripheral
+             ▼
+┌─────────────────────────┐
+│   Shiny.BluetoothLE        │   abstrai Android/iOS/Windows
+└────────────┬───────────┘
+             │ GATT write (service 49535343-fe7d-...)
+             ▼
+┌─────────────────────────┐
+│   Rongta RPP30 (BLE)       │
+└─────────────────────────┘
+```
+
+## ⚠️ Limitações conhecidas / próximos passos
+
+- ✅ Testado imprimindo em **CPCL**. ❌ TSPL/ESC/ZPL não testados neste projeto (a RPP30 suporta os quatro, configurável no menu físico).
 - Chunking fixo de 20 bytes sem negociação de MTU — funciona, mas negociar MTU maior (`TryRequestMtuAsync`) deixaria a impressão mais rápida em Android.
-- Testado apenas em uma unidade física (firmware "BLE-TX"). Contribuições confirmando/corrigindo UUIDs em outros lotes são bem-vindas — abra uma issue com o output da ferramenta de descoberta.
-- iOS não foi testado ainda (só validado via Windows/Shiny.BluetoothLE deve funcionar em teoria, já que a API é abstraída, mas precisa de confirmação em dispositivo real).
+- Testado apenas em **uma unidade física** (firmware "BLE-TX", nome `RPP30-C860`). Contribuições confirmando/corrigindo UUIDs em outros lotes são bem-vindas.
+- **iOS**: a API é abstraída pelo Shiny.BluetoothLE e deveria funcionar em teoria, mas ainda não foi validado num iPhone real.
+- Codepage fixo em ISO-8859-1 — acentuação pode variar dependendo da codepage configurada na impressora (`CP850`/`CP1252`/etc, ver menu físico).
 
-## Licença
+## 🤝 Contribuindo
+
+Testou em outro modelo Rongta ou outro lote da RPP30? Abra uma issue com:
+
+1. O output completo da [ferramenta de descoberta](#-ferramenta-de-descoberta) rodada no seu aparelho;
+2. Nome exato anunciado pelo dispositivo (`RPP30-XXXX`);
+3. Se os UUIDs deste README bateram ou não.
+
+PRs para TSPL/ESC/ZPL, negociação de MTU, ou testes em iOS são muito bem-vindos.
+
+## 📄 Licença
 
 MIT — veja [LICENSE](LICENSE).
+
+---
+
+<div align="center">
+
+Feito descobrindo na marra o que a Rongta não documentou, para quem também precisa imprimir numa RPP30 via BLE.
+
+</div>
