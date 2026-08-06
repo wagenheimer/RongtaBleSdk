@@ -56,6 +56,10 @@ public sealed class CpclLabelBuilder
     public static CpclLabelBuilder CreateDots(int widthDots, int heightDots, int quantity = 1, int gapDots = 0)
         => new(widthDots, heightDots, gapDots, quantity);
 
+    /// <summary>Como <see cref="CreateAutoHeightMm"/>, mas com a largura já em dots.</summary>
+    public static CpclLabelBuilder CreateAutoHeightDots(int widthDots, int quantity = 1, int gapDots = 0)
+        => new(widthDots, null, gapDots, quantity);
+
     /// <summary>Adiciona uma linha de texto. Fonte 0-7 (ver tabela de fontes internas da impressora).</summary>
     public CpclLabelBuilder AddText(int x, int y, string text, int font = 4, int size = 0)
     {
@@ -116,11 +120,49 @@ public sealed class CpclLabelBuilder
         return this;
     }
 
-    /// <summary>Anexa um comando CPCL cru, para casos não cobertos pela API fluente.</summary>
-    public CpclLabelBuilder AddRawCommand(string cpclLine)
+    /// <summary>
+    /// Anexa um bloco de comandos CPCL cru (uma ou mais linhas), para casos não cobertos pela API
+    /// fluente — ex.: conteúdo já montado por um formatador próprio. Faz um parsing best-effort das
+    /// linhas TEXT/T e LINE/L para manter o cálculo automático de altura funcionando mesmo aqui.
+    /// </summary>
+    public CpclLabelBuilder AddRawCommand(string cpclBlock)
     {
-        _body.Append(cpclLine.TrimEnd('\r', '\n')).Append("\r\n");
+        foreach (var rawLine in cpclBlock.Split(["\r\n", "\n"], StringSplitOptions.None))
+        {
+            var line = rawLine.TrimEnd();
+            if (line.Length == 0)
+                continue;
+
+            _body.Append(line).Append("\r\n");
+            TrackHeightFromRawLine(line);
+        }
         return this;
+    }
+
+    void TrackHeightFromRawLine(string line)
+    {
+        var parts = line.TrimStart().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2) return;
+
+        var cmd = parts[0].ToUpperInvariant();
+
+        // T/TEXT font size x y ...  -> Y no índice 4
+        if ((cmd == "T" || cmd == "TEXT") && parts.Length >= 5 && int.TryParse(parts[4], out var textY))
+        {
+            var fontHeight = int.TryParse(parts[1], out var font) ? GetFontHeight(font) : 24;
+            TrackHeight(textY, fontHeight);
+        }
+        // L/LINE x1 y1 x2 y2 ... -> Y no índice 2
+        else if ((cmd == "L" || cmd == "LINE") && parts.Length >= 3 && int.TryParse(parts[2], out var lineY))
+        {
+            TrackHeight(lineY, 0);
+        }
+        // EG bytesPerRow height x y ... -> altura no índice 2, Y no índice 4
+        else if (cmd == "EG" && parts.Length >= 5 &&
+                 int.TryParse(parts[2], out var imgHeight) && int.TryParse(parts[4], out var imgY))
+        {
+            TrackHeight(imgY, imgHeight);
+        }
     }
 
     /// <summary>Gera o comando CPCL final pronto para envio via BLE.</summary>
@@ -136,6 +178,9 @@ public sealed class CpclLabelBuilder
         // Sem gap definido = modo contínuo/plástico: desabilita o sensor de gap (evita form-feed excessivo).
         if (_gapDots <= 0)
             sb.Append("JOURNAL\r\n");
+
+        sb.Append("TONE 0\r\n");
+        sb.Append("SETMAG 0 0\r\n");
 
         sb.Append(NormalizeAndStripDiacritics(_body.ToString()));
         sb.Append("FORM\r\n");
