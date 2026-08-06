@@ -221,10 +221,9 @@ Ela escaneia por 15s, conecta no primeiro dispositivo com nome contendo `RPP`/`R
 ## ⚠️ Limitações conhecidas / próximos passos
 
 - ✅ Testado imprimindo em **CPCL**. ❌ TSPL/ESC/ZPL não testados neste projeto (a RPP30 suporta os quatro, configurável no menu físico).
-- Chunking fixo de 20 bytes sem negociação de MTU — funciona, mas negociar MTU maior (`TryRequestMtuAsync`) deixaria a impressão mais rápida em Android.
 - Testado apenas em **uma unidade física** (firmware "BLE-TX", nome `RPP30-C860`). Contribuições confirmando/corrigindo UUIDs em outros lotes são bem-vindas.
-- **iOS**: a API é abstraída pelo Shiny.BluetoothLE e deveria funcionar em teoria, mas ainda não foi validado num iPhone real.
-- Codepage fixo em ISO-8859-1 — acentuação pode variar dependendo da codepage configurada na impressora (`CP850`/`CP1252`/etc, ver menu físico).
+- **iOS**: a API é abstraída pelo Shiny.BluetoothLE e o pacote compila e é publicado para `net10.0-ios`/`net10.0-maccatalyst`, mas o fluxo BLE em si ainda não foi validado num iPhone/Mac real.
+- Acentos são removidos e o CPCL é enviado como ASCII — suficiente para etiquetas em português/latino, mas a codepage configurada na própria impressora (`CP850`/`CP1252`/etc) ainda não é configurável pelo SDK.
 
 ## 📦 Publicação (release)
 
