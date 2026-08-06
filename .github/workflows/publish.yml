@@ -8,7 +8,10 @@ on:
 
 jobs:
   build-and-publish:
-    runs-on: macos-latest
+    # Building a *library* for iOS/MacCatalyst/Windows doesn't need a Mac/Xcode or a Windows-only
+    # toolchain — just each workload's reference assemblies, which install on any OS. Windows was
+    # picked over macOS because macOS runner minutes are scarce/queued on free GitHub accounts.
+    runs-on: windows-latest
 
     permissions:
       id-token: write # required for the Trusted Publishing OIDC token
@@ -22,8 +25,8 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      - name: Install MAUI workloads (android, ios, maccatalyst)
-        run: dotnet workload install maui-android maui-ios maui-maccatalyst
+      - name: Install MAUI workloads
+        run: dotnet workload install maui
 
       - name: Pack
         run: dotnet pack src/RongtaBleSdk/RongtaBleSdk.csproj -c Release -o artifacts

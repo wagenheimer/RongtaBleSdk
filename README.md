@@ -221,10 +221,9 @@ It scans for 15s, connects to the first device whose name contains `RPP`/`RONGTA
 ## ⚠️ Known limitations / next steps
 
 - ✅ Tested printing in **CPCL**. ❌ TSPL/ESC/ZPL not tested in this project (the RPP30 supports all four, switchable from the physical menu).
-- Fixed 20-byte chunking without MTU negotiation — it works, but negotiating a larger MTU (`TryRequestMtuAsync`) would make printing faster on Android.
 - Tested on **a single physical unit** only ("BLE-TX" firmware, name `RPP30-C860`). Contributions confirming/correcting UUIDs on other batches are welcome.
-- **iOS**: the API is abstracted by Shiny.BluetoothLE and should work in theory, but hasn't been validated on a real iPhone yet.
-- Encoding is fixed at ISO-8859-1 — accented characters may vary depending on the printer's configured codepage (`CP850`/`CP1252`/etc, see physical menu).
+- **iOS**: the API is abstracted by Shiny.BluetoothLE and the package builds and ships for `net10.0-ios`/`net10.0-maccatalyst`, but the BLE flow itself hasn't been validated on a real iPhone/Mac yet.
+- Diacritics are stripped and CPCL is sent as ASCII — good enough for Latin-script labels, but the printer's own codepage settings (`CP850`/`CP1252`/etc) aren't configurable from the SDK yet.
 
 ## 📦 Releasing
 

@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Windows target is only buildable on a Windows machine/runner (it's here so CELMI's local
-         ProjectReference on Windows resolves it too); CI packs on macOS, which can't build it. -->
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net10.0-android;net10.0-ios;net10.0-maccatalyst;net10.0-windows10.0.17763.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+    <!-- Building a *library* (not an app) for iOS/MacCatalyst does not require a Mac/Xcode — only
+         the workload's reference assemblies, which install on any OS. CI therefore builds and packs
+         all four TFMs on a Windows runner (see .github/workflows/publish.yml). -->
+    <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst;net10.0-windows10.0.17763.0</TargetFrameworks>
     <UseMaui>true</UseMaui>
     <SingleProject>false</SingleProject>
     <ImplicitUsings>enable</ImplicitUsings>
