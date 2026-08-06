@@ -1,0 +1,46 @@
+name: publish
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    runs-on: macos-latest
+
+    permissions:
+      id-token: write # necessário para o token OIDC do Trusted Publishing
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Instalar workloads MAUI (android, ios, maccatalyst)
+        run: dotnet workload install android ios maccatalyst
+
+      - name: Pack
+        run: >
+          dotnet pack src/RongtaBleSdk/RongtaBleSdk.csproj
+          -c Release
+          -p:TargetFrameworks="net10.0-android;net10.0-ios;net10.0-maccatalyst"
+          -o artifacts
+
+      - name: NuGet login (OIDC -> chave de API temporária)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: wagenheimer
+
+      - name: NuGet push
+        run: >
+          dotnet nuget push artifacts/*.nupkg
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
