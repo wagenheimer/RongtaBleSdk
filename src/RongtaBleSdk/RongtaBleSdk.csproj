@@ -16,11 +16,12 @@
     <PackageTags>rongta;rpp30;ble;bluetooth;label-printer;cpcl;maui;dotnet</PackageTags>
     <RepositoryUrl>https://github.com/wagenheimer/RongtaBleSdk</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Shiny.BluetoothLE" Version="4.0.1" />
+    <PackageReference Include="SkiaSharp" Version="3.119.4" />
   </ItemGroup>
 
 </Project>

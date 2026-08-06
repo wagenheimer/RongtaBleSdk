@@ -8,6 +8,7 @@
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/)
 [![MAUI](https://img.shields.io/badge/MAUI-Android%20%7C%20iOS%20%7C%20MacCatalyst-blue)](https://learn.microsoft.com/dotnet/maui/)
 [![Status](https://img.shields.io/badge/status-confirmed%20on%20real%20hardware-brightgreen)](#-confirmed-for-real-not-a-guess)
+[![Version](https://img.shields.io/badge/version-0.2.0-orange)](#-whats-new-in-020)
 
 There is no official BLE UUID documentation for Rongta printers anywhere.
 This repo exists because someone needed to print a label on an RPP30 over BLE — and had to reverse-engineer it the hard way.
@@ -77,6 +78,17 @@ Likely variations/duplicates of the same serial transport, exposed for compatibi
 
 </details>
 
+## 🆕 What's new in 0.2.0
+
+Field-tested improvements ported from a production CPCL/BLE printing pipeline (a livestock-weighing MAUI app that prints thousands of labels a day):
+
+- **MTU negotiation** — requests a 512-byte MTU on connect (Android), auto-sizing the write chunk instead of a fixed 20 bytes. Falls back safely when negotiation isn't supported (iOS/Windows negotiate on their own).
+- **Write retries** — each chunk gets up to 3 attempts with backoff before the send fails, and a disconnect mid-print now throws a clear `IOException` instead of hanging.
+- **Multi-UUID discovery** — `RongtaBlePrinter` now tries a list of known UUID pairs (the confirmed RPP30 one plus a few common UART-BLE variants seen on similar Chinese printer chips) and falls back to "first writable characteristic" if none match — more likely to work out of the box on a different batch or a different Rongta model.
+- **Auto label height** — `CpclLabelBuilder.CreateAutoHeightMm(width, ...)` calculates the label height from the content you add (text/barcode/QR/image Y positions) instead of requiring you to know it up front.
+- **Image printing** — `AddImage(...)` converts any PNG/JPG (via SkiaSharp) to the CPCL `EG` monochrome command, so you can print logos or graphics, not just text/barcodes/QR.
+- **Diacritics stripping** — accented characters are automatically stripped before sending, since CPCL on these printers is effectively ASCII-only.
+
 ## 🧾 Print command language: CPCL
 
 The RPP30 accepts both **CPCL** and **ESC/POS** (switchable from the physical menu: hold `Power` + `Feed` → `Cmd Mode: CPCL/ESC`). This SDK generates **CPCL** — confirmed by printing a real label over BLE. TSPL and ZPL have not been tested (see [Known limitations](#-known-limitations--next-steps)).
@@ -84,8 +96,9 @@ The RPP30 accepts both **CPCL** and **ESC/POS** (switchable from the physical me
 ## 📦 Installation
 
 ```xml
-<PackageReference Include="RongtaBleSdk" Version="0.1.0" />
+<PackageReference Include="RongtaBleSdk" Version="0.2.0" />
 <PackageReference Include="Shiny.BluetoothLE" Version="4.0.1" />
+<PackageReference Include="SkiaSharp" Version="3.119.4" />
 ```
 
 Register in `MauiProgram.cs`:

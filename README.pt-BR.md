@@ -8,6 +8,7 @@
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4)](https://dotnet.microsoft.com/)
 [![MAUI](https://img.shields.io/badge/MAUI-Android%20%7C%20iOS%20%7C%20MacCatalyst-blue)](https://learn.microsoft.com/dotnet/maui/)
 [![Status](https://img.shields.io/badge/status-confirmado%20em%20dispositivo%20real-brightgreen)](#-confirmado-de-verdade-não-é-palpite)
+[![Version](https://img.shields.io/badge/version-0.2.0-orange)](#-novidades-da-020)
 
 🇺🇸 [Read in English](README.md) · 🇧🇷 Português (você está aqui)
 
@@ -77,6 +78,17 @@ Provavelmente variações/duplicatas do mesmo transporte serial, expostas por co
 
 </details>
 
+## 🆕 Novidades da 0.2.0
+
+Melhorias testadas em campo, portadas de um pipeline de impressão CPCL/BLE em produção (um app MAUI de pesagem de gado que imprime milhares de etiquetas por dia):
+
+- **Negociação de MTU** — solicita MTU de 512 bytes na conexão (Android), ajustando automaticamente o tamanho do bloco em vez de fixar 20 bytes. Cai com segurança no fallback quando a negociação não é suportada (iOS/Windows negociam sozinhos).
+- **Retry de escrita** — cada bloco tem até 3 tentativas com backoff antes de falhar, e uma desconexão no meio da impressão agora lança um `IOException` claro em vez de travar.
+- **Descoberta multi-UUID** — o `RongtaBlePrinter` agora tenta uma lista de pares de UUID conhecidos (o confirmado na RPP30 mais algumas variações comuns de chip UART-BLE vistas em impressoras chinesas parecidas) e cai para "primeira characteristic com escrita" se nenhum bater — mais chance de funcionar de primeira num lote diferente ou noutro modelo Rongta.
+- **Altura de etiqueta automática** — `CpclLabelBuilder.CreateAutoHeightMm(largura, ...)` calcula a altura da etiqueta a partir do conteúdo adicionado (posições Y de texto/código de barras/QR/imagem), sem precisar saber de antemão.
+- **Impressão de imagem** — `AddImage(...)` converte qualquer PNG/JPG (via SkiaSharp) para o comando monocromático `EG` do CPCL, permitindo imprimir logos ou gráficos, não só texto/código de barras/QR.
+- **Remoção de acentos** — caracteres acentuados são removidos automaticamente antes do envio, já que o CPCL nessas impressoras é, na prática, ASCII puro.
+
 ## 🧾 Comando de impressão: CPCL
 
 A RPP30 aceita **CPCL** e **ESC/POS** (alternável no menu físico: segure `Power` e `Feed` → `Cmd Mode: CPCL/ESC`). Este SDK gera **CPCL** — confirmado imprimindo uma etiqueta real via BLE. TSPL e ZPL não foram testados (ver [Limitações](#-limitações-conhecidas--próximos-passos)).
@@ -84,8 +96,9 @@ A RPP30 aceita **CPCL** e **ESC/POS** (alternável no menu físico: segure `Powe
 ## 📦 Instalação
 
 ```xml
-<PackageReference Include="RongtaBleSdk" Version="0.1.0" />
+<PackageReference Include="RongtaBleSdk" Version="0.2.0" />
 <PackageReference Include="Shiny.BluetoothLE" Version="4.0.1" />
+<PackageReference Include="SkiaSharp" Version="3.119.4" />
 ```
 
 Registre no `MauiProgram.cs`:
