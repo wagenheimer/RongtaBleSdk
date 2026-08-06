@@ -11,7 +11,7 @@ jobs:
     runs-on: macos-latest
 
     permissions:
-      id-token: write # necessário para o token OIDC do Trusted Publishing
+      id-token: write # required for the Trusted Publishing OIDC token
       contents: read
 
     steps:
@@ -22,8 +22,8 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      - name: Instalar workloads MAUI (android, ios, maccatalyst)
-        run: dotnet workload install android ios maccatalyst
+      - name: Install MAUI workloads (android, ios, maccatalyst)
+        run: dotnet workload install maui-android maui-ios maui-maccatalyst
 
       - name: Pack
         run: >
@@ -32,7 +32,7 @@ jobs:
           "-p:TargetFrameworks=net10.0-android%3Bnet10.0-ios%3Bnet10.0-maccatalyst"
           -o artifacts
 
-      - name: NuGet login (OIDC -> chave de API temporária)
+      - name: NuGet login (OIDC -> temporary API key)
         uses: NuGet/login@v1
         id: login
         with:
