@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+    <UseMaui>true</UseMaui>
+    <SingleProject>false</SingleProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>RongtaBleSdk</RootNamespace>
+
+    <PackageId>RongtaBleSdk</PackageId>
+    <Authors>Cezar Wagenheimer</Authors>
+    <Description>SDK .NET MAUI não-oficial para impressoras de etiqueta Rongta (testado na RPP30) via Bluetooth Low Energy, usando Shiny.BluetoothLE e comandos CPCL.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>rongta;rpp30;ble;bluetooth;label-printer;cpcl;maui;dotnet</PackageTags>
+    <RepositoryUrl>https://github.com/wagenheimer/RongtaBleSdk</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Shiny.BluetoothLE" Version="4.0.1" />
+  </ItemGroup>
+
+</Project>
