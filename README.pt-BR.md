@@ -16,7 +16,7 @@ Nenhum UUID BLE oficial documentado pela Rongta existe por aí.
 Este repositório existe porque alguém precisava imprimir uma etiqueta numa RPP30 via BLE — e teve que descobrir tudo na marra.
 
 [Por quê](#-por-que-este-projeto-existe) ·
-[UUIDs confirmados](#-uuids-confirmados-rpp30-firmware-ble-tx) ·
+[UUIDs confirmados](#-uuids-confirmados-rpp30) ·
 [Instalação](#-instalação) ·
 [Uso](#-uso) ·
 [Ferramenta de descoberta](#-ferramenta-de-descoberta) ·
@@ -46,7 +46,7 @@ Diferente de UUIDs "prováveis" copiados de fóruns, os valores abaixo foram **v
 3. Enviado um comando CPCL de teste, em blocos de 20 bytes, pela characteristic de escrita.
 4. **A impressora imprimiu a etiqueta.** ✔️
 
-## 🔌 UUIDs confirmados (RPP30, firmware "BLE-TX")
+## 🔌 UUIDs confirmados (RPP30)
 
 | Papel | UUID |
 |---|---|
@@ -221,7 +221,7 @@ Ela escaneia por 15s, conecta no primeiro dispositivo com nome contendo `RPP`/`R
 ## ⚠️ Limitações conhecidas / próximos passos
 
 - ✅ Testado imprimindo em **CPCL**. ❌ TSPL/ESC/ZPL não testados neste projeto (a RPP30 suporta os quatro, configurável no menu físico).
-- Testado apenas em **uma unidade física** (firmware "BLE-TX", nome `RPP30-C860`). Contribuições confirmando/corrigindo UUIDs em outros lotes são bem-vindas.
+- Testado apenas em **uma unidade física** (nome `RPP30-C860`). Contribuições confirmando/corrigindo UUIDs em outros lotes são bem-vindas.
 - **iOS**: a API é abstraída pelo Shiny.BluetoothLE e o pacote compila e é publicado para `net10.0-ios`/`net10.0-maccatalyst`, mas o fluxo BLE em si ainda não foi validado num iPhone/Mac real.
 - Acentos são removidos e o CPCL é enviado como ASCII — suficiente para etiquetas em português/latino, mas a codepage configurada na própria impressora (`CP850`/`CP1252`/etc) ainda não é configurável pelo SDK.
 

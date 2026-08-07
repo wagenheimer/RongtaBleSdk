@@ -16,7 +16,7 @@ This repo exists because someone needed to print a label on an RPP30 over BLE �
 🇺🇸 English (you are here) · 🇧🇷 [Ler em Português](README.pt-BR.md)
 
 [Why](#-why-this-project-exists) ·
-[Confirmed UUIDs](#-confirmed-uuids-rpp30-ble-tx-firmware) ·
+[Confirmed UUIDs](#-confirmed-uuids-rpp30) ·
 [Install](#-installation) ·
 [Usage](#-usage) ·
 [Discovery tool](#-discovery-tool) ·
@@ -46,7 +46,7 @@ Unlike "probable" UUIDs copied from forum threads, the values below were **valid
 3. Sent a test CPCL command, chunked into 20-byte blocks, through the write characteristic.
 4. **The printer printed the label.** ✔️
 
-## 🔌 Confirmed UUIDs (RPP30, "BLE-TX" firmware)
+## 🔌 Confirmed UUIDs (RPP30)
 
 | Role | UUID |
 |---|---|
@@ -221,7 +221,7 @@ It scans for 15s, connects to the first device whose name contains `RPP`/`RONGTA
 ## ⚠️ Known limitations / next steps
 
 - ✅ Tested printing in **CPCL**. ❌ TSPL/ESC/ZPL not tested in this project (the RPP30 supports all four, switchable from the physical menu).
-- Tested on **a single physical unit** only ("BLE-TX" firmware, name `RPP30-C860`). Contributions confirming/correcting UUIDs on other batches are welcome.
+- Tested on **a single physical unit** only (device name `RPP30-C860`). Contributions confirming/correcting UUIDs on other batches are welcome.
 - **iOS**: the API is abstracted by Shiny.BluetoothLE and the package builds and ships for `net10.0-ios`/`net10.0-maccatalyst`, but the BLE flow itself hasn't been validated on a real iPhone/Mac yet.
 - Diacritics are stripped and CPCL is sent as ASCII — good enough for Latin-script labels, but the printer's own codepage settings (`CP850`/`CP1252`/etc) aren't configurable from the SDK yet.
 

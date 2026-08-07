@@ -2,7 +2,7 @@ namespace RongtaBleSdk;
 
 /// <summary>
 /// UUIDs and transport parameters confirmed via reverse-engineering on a physical Rongta RPP30
-/// (firmware "BLE-TX", "RPP30-C860"). Not officially documented by Rongta — they may vary by
+/// (device name "RPP30-C860"). Not officially documented by Rongta — they may vary by
 /// batch/firmware, which is why discovery in <see cref="RongtaBlePrinter"/> tries a list of known
 /// UUIDs and falls back to a generic search for a characteristic with WRITE.
 /// </summary>
