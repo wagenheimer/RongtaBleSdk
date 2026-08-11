@@ -174,6 +174,32 @@ await printer.SendAsync(comandoCru);
 
 O `RongtaBlePrinter` também expõe `DetectedWriteEndpoint` depois de conectar, para você logar/inspecionar qual par serviço/characteristic funcionou de fato no seu aparelho.
 
+## 🧾 Componente ESC/POS genérico
+
+Além do fluxo CPCL (etiquetas RPP30/Zebra), o SDK traz um componente **ESC/POS** (comandos de impressoras
+térmicas de cupom/recibo — as genéricas chinesas tipo RPP200 e compatíveis):
+
+| Tipo | API | Descrição |
+|---|---|---|
+| `statics` | `EscPosCommands.Reset / CodePage850 / BoldOn / BoldOff / AlignCenter / AlignLeft / LargeText / Feed3 / Cut` | Constantes de comandos ESC/POS (bytes de protocolo) |
+| `statics` | `EscPosImageConverter.ImageToEscPos(imageBytes, printerMaxWidth, alignCenter, dithering)` | Converte imagem → bit-image raster `GS v 0` (com dithering Floyd-Steinberg) |
+| `statics` | `EscPosImageConverter.ConvertToCP850(text)` | Converte texto para Code Page 850 com fallback ASCII |
+
+Exemplo:
+
+```csharp
+using RongtaBleSdk.EscPos;
+
+// Logo como raster ESC/POS centralizada
+byte[] logo = EscPosImageConverter.ImageToEscPos(logoBytes, printerMaxWidth: 384);
+
+// Texto acentuado em CP850
+byte[] corpo = EscPosImageConverter.ConvertToCP850("Pesagem #12 — Peso líquido 1.234 kg");
+```
+
+Estes utilitários são independentes de domínio e funcionam com qualquer impressora ESC/POS térmica,
+complementando o `CpclLabelBuilder` (que cobre o lado CPCL/etiquetas).
+
 ## 🔍 Ferramenta de descoberta
 
 Console app Windows (`Windows.Devices.Bluetooth`) que escaneia BLE, conecta na impressora e lista **todos** os serviços/characteristics reais com suas propriedades (`WRITE` / `WRITE_NO_RESPONSE` / `NOTIFY` / `READ`) — o mesmo processo usado para confirmar os UUIDs deste README. Rode-a se:
