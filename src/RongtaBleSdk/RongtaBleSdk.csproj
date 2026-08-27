@@ -3,8 +3,8 @@
   <PropertyGroup>
     <!-- Building a *library* (not an app) for iOS/MacCatalyst does not require a Mac/Xcode — only
          the workload's reference assemblies, which install on any OS. CI therefore builds and packs
-         all four TFMs on a Windows runner (see .github/workflows/publish.yml). -->
-    <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst;net10.0-windows10.0.17763.0</TargetFrameworks>
+         these TFMs on a Windows runner (see .github/workflows/publish.yml). -->
+    <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
     <UseMaui>true</UseMaui>
     <SingleProject>false</SingleProject>
     <ImplicitUsings>enable</ImplicitUsings>
