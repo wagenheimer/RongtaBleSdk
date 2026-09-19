@@ -165,12 +165,39 @@ await printer.SendAsync(rawCommand);
 | `CreateAutoHeightMm(width, qty, gapMm)` | Creates a label whose **height is calculated automatically** from whatever content you add (text/barcode/QR/image Y positions) — no need to know it up front |
 | `CreateAutoHeightDots(width, qty, gapDots)` | Same as above, width already in dots |
 | `AddText(x, y, text, font, size)` | Adds a line of text |
+| `AddCenterText(y, text, font, size)` | Centers text horizontally across the label width |
 | `AddBarcode(x, y, data, type, height, ...)` | Adds a 1D barcode (CODE128, EAN13, etc.) |
 | `AddQrCode(x, y, data, cellSize)` | Adds a QR code |
 | `AddLine(x, y, length, thickness)` | Line/separator |
+| `AddBox(x, y, width, height, thickness)` | Rectangular bounding box |
+| `AddInverse(x, y, width, height)` | White-on-black inverted highlight block |
 | `AddImage(x, y, imageBytes, maxWidthDots, maxHeightDots)` | Converts a PNG/JPG (via SkiaSharp) to the CPCL `EG` command — logos, graphics, anything bitmap |
 | `AddRawCommand(cpclBlock)` | Appends one or more raw CPCL command lines for anything not covered by the fluent API; still parsed for automatic height tracking |
 | `Build()` | Generates the final CPCL bytes (header, `TONE`/`SETMAG`, diacritics stripped, `FORM`/`PRINT`) ready for `SendAsync` |
+
+## 🧾 `EscPosReceiptBuilder` API (Thermal Receipts & Tickets)
+
+For printing tickets, receipts, and reports on continuous roll paper using ESC/POS:
+
+```csharp
+var receipt = EscPosReceiptBuilder.Create58mm()
+    .Initialize()
+    .AlignCenter()
+    .SetDoubleSize(true)
+    .AddLine("CELMI PESAGEM")
+    .SetDoubleSize(false)
+    .AddLine("Comprovante de Pesagem")
+    .AddDivider()
+    .AlignLeft()
+    .AddKeyValue("DATA:", "19/09/2026")
+    .AddKeyValue("HORA:", "15:30")
+    .AddKeyValue("PESO TOTAL:", "12.450 kg")
+    .AddDivider()
+    .Feed(2)
+    .Cut();
+
+await printer.PrintAsync(receipt);
+```
 
 `RongtaBlePrinter` also exposes `DetectedWriteEndpoint` after connecting, so you can log/inspect which service/characteristic pair actually worked on your unit.
 

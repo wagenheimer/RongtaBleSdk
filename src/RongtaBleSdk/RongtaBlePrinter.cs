@@ -183,6 +183,14 @@ public sealed class RongtaBlePrinter : IAsyncDisposable
     public Task PrintAsync(CpclLabelBuilder label, CancellationToken cancellationToken = default)
         => SendAsync(label.Build(), cancellationToken);
 
+    /// <summary>Builds and sends an ESC/POS receipt (voucher, ticket, report).</summary>
+    public Task PrintAsync(EscPos.EscPosReceiptBuilder receipt, CancellationToken cancellationToken = default)
+        => SendAsync(receipt.Build(), cancellationToken);
+
+    /// <summary>Sends raw ESC/POS command bytes to the printer.</summary>
+    public Task PrintEscPosAsync(byte[] escPosBytes, CancellationToken cancellationToken = default)
+        => SendAsync(escPosBytes, cancellationToken);
+
     public async Task DisconnectAsync()
     {
         if (_peripheral is null)

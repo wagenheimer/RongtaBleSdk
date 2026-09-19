@@ -12,15 +12,18 @@
     <LangVersion>latest</LangVersion>
     <RootNamespace>RongtaBleSdk</RootNamespace>
 
+    <SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
+    <NoWarn>$(NoWarn);NU1608</NoWarn>
+
     <PackageId>RongtaBleSdk</PackageId>
     <Authors>Cezar Wagenheimer</Authors>
-    <Description>Unofficial .NET MAUI SDK for Rongta label printers (tested on the RPP30) over Bluetooth Low Energy, using Shiny.BluetoothLE and CPCL commands.</Description>
+    <Description>Unofficial .NET MAUI SDK for Rongta label and receipt printers (tested on RPP30) over Bluetooth Low Energy, supporting CPCL labels, ESC/POS receipts, and image dithering.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageTags>rongta;rpp30;ble;bluetooth;label-printer;cpcl;maui;dotnet</PackageTags>
+    <PackageTags>rongta;rpp30;ble;bluetooth;label-printer;receipt-printer;cpcl;escpos;maui;dotnet</PackageTags>
     <RepositoryUrl>https://github.com/wagenheimer/RongtaBleSdk</RepositoryUrl>
     <PackageProjectUrl>https://github.com/wagenheimer/RongtaBleSdk</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Version>0.2.1</Version>
+    <Version>0.3.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

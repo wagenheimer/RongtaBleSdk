@@ -165,22 +165,48 @@ await printer.SendAsync(comandoCru);
 | `CreateAutoHeightMm(largura, qtd, gapMm)` | Cria etiqueta com **altura calculada automaticamente** a partir do conteúdo adicionado (posições Y de texto/código de barras/QR/imagem) — sem precisar saber de antemão |
 | `CreateAutoHeightDots(largura, qtd, gapDots)` | Igual acima, largura já em dots |
 | `AddText(x, y, texto, font, size)` | Adiciona uma linha de texto |
+| `AddCenterText(y, texto, font, size)` | Centraliza o texto horizontalmente na largura da etiqueta |
 | `AddBarcode(x, y, dados, tipo, altura, ...)` | Adiciona código de barras 1D (CODE128, EAN13, etc.) |
 | `AddQrCode(x, y, dados, cellSize)` | Adiciona QR Code |
-| `AddLine(x, y, comprimento, espessura)` | Linha/separador |
+| `AddLine(x, y, comprimento, espessura)` | Linha/separador horizontal |
+| `AddBox(x, y, largura, altura, espessura)` | Caixa/retângulo delimitador |
+| `AddInverse(x, y, largura, altura)` | Bloco invertido (texto/área branca em fundo preto) |
 | `AddImage(x, y, imageBytes, maxWidthDots, maxHeightDots)` | Converte um PNG/JPG (via SkiaSharp) para o comando CPCL `EG` — logos, gráficos, qualquer bitmap |
 | `AddRawCommand(blocoCpcl)` | Anexa uma ou mais linhas de comando CPCL cru, para casos não cobertos pela API fluente; ainda entra no cálculo automático de altura |
 | `Build()` | Gera os bytes CPCL finais (header, `TONE`/`SETMAG`, acentos removidos, `FORM`/`PRINT`) prontos para `SendAsync` |
 
 O `RongtaBlePrinter` também expõe `DetectedWriteEndpoint` depois de conectar, para você logar/inspecionar qual par serviço/characteristic funcionou de fato no seu aparelho.
 
-## 🧾 Componente ESC/POS genérico
+## 🧾 Montador Fluente de Cupons ESC/POS (`EscPosReceiptBuilder`)
 
-Além do fluxo CPCL (etiquetas RPP30/Zebra), o SDK traz um componente **ESC/POS** (comandos de impressoras
-térmicas de cupom/recibo — as genéricas chinesas tipo RPP200 e compatíveis):
+Para emitir comprovantes, relatórios e cupons fiscais/não-fiscais em bobina térmica:
+
+```csharp
+using RongtaBleSdk.EscPos;
+
+var recibo = EscPosReceiptBuilder.Create58mm()
+    .Initialize()
+    .AlignCenter()
+    .SetDoubleSize(true)
+    .AddLine("CELMI PESAGEM")
+    .SetDoubleSize(false)
+    .AddLine("Comprovante Oficial")
+    .AddDivider()
+    .AlignLeft()
+    .AddKeyValue("DATA:", "19/09/2026")
+    .AddKeyValue("HORA:", "15:30")
+    .AddKeyValue("PLACA:", "ABC-1234")
+    .AddKeyValue("PESO TOTAL:", "24.500 kg")
+    .AddDivider()
+    .Feed(2)
+    .Cut();
+
+await printer.PrintAsync(recibo);
+```
 
 | Tipo | API | Descrição |
 |---|---|---|
+| `builder` | `EscPosReceiptBuilder.Create58mm() / Create80mm()` | Construtor fluente de cupom com alinhamentos, divisores, chave-valor e corte |
 | `statics` | `EscPosCommands.Reset / CodePage850 / BoldOn / BoldOff / AlignCenter / AlignLeft / LargeText / Feed3 / Cut` | Constantes de comandos ESC/POS (bytes de protocolo) |
 | `statics` | `EscPosImageConverter.ImageToEscPos(imageBytes, printerMaxWidth, alignCenter, dithering)` | Converte imagem → bit-image raster `GS v 0` (com dithering Floyd-Steinberg) |
 | `statics` | `EscPosImageConverter.ConvertToCP850(text)` | Converte texto para Code Page 850 com fallback ASCII |

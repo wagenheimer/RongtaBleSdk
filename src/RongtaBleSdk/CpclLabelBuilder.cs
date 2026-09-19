@@ -101,6 +101,31 @@ public sealed class CpclLabelBuilder
         return this;
     }
 
+    /// <summary>Adds a rectangular bounding box.</summary>
+    public CpclLabelBuilder AddBox(int x, int y, int widthDots, int heightDots, int thicknessDots = 2)
+    {
+        _body.Append($"BOX {x} {y} {x + widthDots} {y + heightDots} {thicknessDots}\r\n");
+        TrackHeight(y, heightDots);
+        return this;
+    }
+
+    /// <summary>Adds an inverted color block (white on black).</summary>
+    public CpclLabelBuilder AddInverse(int x, int y, int widthDots, int heightDots)
+    {
+        _body.Append($"INVERSE-LINE {x} {y} {x + widthDots} {y} {heightDots}\r\n");
+        TrackHeight(y, heightDots);
+        return this;
+    }
+
+    /// <summary>Adds text centered horizontally across the label width.</summary>
+    public CpclLabelBuilder AddCenterText(int y, string text, int font = 4, int size = 0, int? customCharWidth = null)
+    {
+        var charWidth = customCharWidth ?? GetFontWidth(font);
+        var estimatedWidth = text.Length * charWidth;
+        var x = Math.Max(0, (_widthDots - estimatedWidth) / 2);
+        return AddText(x, y, text, font, size);
+    }
+
     /// <summary>
     /// Adds an image (logo, graphic) converted to the CPCL monochrome format (the <c>EG</c> command).
     /// </summary>
@@ -191,7 +216,20 @@ public sealed class CpclLabelBuilder
 
     void TrackHeight(int y, int elementHeight) => _maxYReached = Math.Max(_maxYReached, y + elementHeight);
 
+    static readonly Dictionary<int, int> FontWidths = new()
+    {
+        [0] = 12,
+        [1] = 10,
+        [2] = 16,
+        [3] = 24,
+        [4] = 28,
+        [5] = 12,
+        [7] = 12,
+    };
+
     static int GetFontHeight(int font) => FontHeights.GetValueOrDefault(font, 24);
+
+    static int GetFontWidth(int font) => FontWidths.GetValueOrDefault(font, 16);
 
     static string Escape(string text) => text.Replace("\r", "").Replace("\n", " ");
 

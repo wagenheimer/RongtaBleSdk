@@ -28,6 +28,9 @@ jobs:
       - name: Install MAUI workloads
         run: dotnet workload install maui
 
+      - name: Run unit tests
+        run: dotnet test tests/RongtaBleSdk.Tests/RongtaBleSdk.Tests.csproj -c Release
+
       - name: Pack
         run: dotnet pack src/RongtaBleSdk/RongtaBleSdk.csproj -c Release -o artifacts
 
