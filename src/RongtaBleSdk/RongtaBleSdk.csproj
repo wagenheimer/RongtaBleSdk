@@ -27,7 +27,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Shiny.BluetoothLE" Version="6.3.0" />
+    <PackageReference Include="Shiny.BluetoothLE" Version="6.4.1-beta-0001" />
     <PackageReference Include="SkiaSharp" Version="4.153.1" />
   </ItemGroup>
 
