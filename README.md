@@ -277,3 +277,7 @@ MIT — see [LICENSE](LICENSE).
 Built by reverse-engineering what Rongta never documented, for anyone else who also needs to print on an RPP30 over BLE.
 
 </div>
+
+---
+
+Explore more open-source projects at **[wagenheimer.com/opensource](https://wagenheimer.com/opensource)**.
